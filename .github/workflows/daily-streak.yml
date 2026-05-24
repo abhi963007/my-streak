@@ -1,0 +1,46 @@
+name: Daily Streak Keeper
+
+on:
+  schedule:
+    # Trigger daily at 10:00 AM UTC (3:30 PM Indian Standard Time)
+    - cron: '0 10 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  commit-streak:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Grants write permissions to the workflow to push commits
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history to avoid conflicts
+
+      - name: Generate Random Commits (50 to 100)
+        run: |
+          # Setup git config identity — must match your GitHub account email
+          git config --global user.email "abhiramak963@gmail.com"
+          git config --global user.name "abhi963007"
+
+          # Always sync with the latest remote state first to avoid conflicts
+          git fetch origin main
+          git reset --hard origin/main
+
+          # Generate a random commit count between 50 and 100
+          commits=$(( RANDOM % 51 + 50 ))
+          echo "Selected commit count for today: $commits"
+
+          # Append timestamps and commit iteratively
+          for i in $(seq 1 $commits)
+          do
+            timestamp=$(date -u -R)
+            echo "GitShine Cloud Commit: $timestamp - Commit #$i of $commits" >> contributions.txt
+            git add contributions.txt
+            git commit -m "GitShine contribution update #$i [skip ci]"
+          done
+
+      - name: Push Commits back to GitHub
+        run: |
+          git push origin main
