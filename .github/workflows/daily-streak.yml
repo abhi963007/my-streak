@@ -18,7 +18,7 @@ jobs:
         with:
           fetch-depth: 0  # Fetch full history to avoid conflicts
 
-      - name: Generate Random Commits (50 to 100)
+      - name: Generate Random Commits (200 to 500 with randomized times)
         run: |
           # Setup git config identity — must match your GitHub account email
           git config --global user.email "abhiramak963@gmail.com"
@@ -28,17 +28,28 @@ jobs:
           git fetch origin main
           git reset --hard origin/main
 
-          # Generate a random commit count between 50 and 100
-          commits=$(( RANDOM % 51 + 50 ))
+          # Generate a random commit count between 200 and 500
+          commits=$(( RANDOM % 301 + 200 ))
           echo "Selected commit count for today: $commits"
 
-          # Append timestamps and commit iteratively
+          # Target date is today (UTC)
+          target_date=$(date +%Y-%m-%d)
+
+          # Append timestamps and commit iteratively with randomized times
           for i in $(seq 1 $commits)
           do
-            timestamp=$(date -u -R)
+            # Generate random hour (00-23), minute (00-59), and second (00-59)
+            hour=$(printf "%02d" $(( RANDOM % 24 )))
+            min=$(printf "%02d" $(( RANDOM % 60 )))
+            sec=$(printf "%02d" $(( RANDOM % 60 )))
+            
+            timestamp="${target_date} ${hour}:${min}:${sec}"
+            
             echo "GitShine Cloud Commit: $timestamp - Commit #$i of $commits" >> contributions.txt
             git add contributions.txt
-            git commit -m "GitShine contribution update #$i [skip ci]"
+            
+            # Commit with custom author and committer dates to distribute them randomly across 24 hours
+            GIT_AUTHOR_DATE="$timestamp" GIT_COMMITTER_DATE="$timestamp" git commit -m "GitShine contribution update #$i [skip ci]"
           done
 
       - name: Push Commits back to GitHub
