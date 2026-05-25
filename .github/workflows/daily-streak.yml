@@ -2,56 +2,58 @@ name: Daily Streak Keeper
 
 on:
   schedule:
-    # Trigger 6 times a day (every 4 hours, starting at 6:00 AM Indian Standard Time / 12:30 AM UTC)
+    # 6x daily at :30 past 0,4,8,12,16,20 UTC (6:00 AM IST = 00:30 UTC)
     - cron: '30 */4 * * *'
-  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+# Required so GITHUB_TOKEN can push (repo Settings must also allow read/write)
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-streak-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   commit-streak:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # Grants write permissions to the workflow to push commits
+    timeout-minutes: 45
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch full history to avoid conflicts
+          fetch-depth: 0
+          persist-credentials: true
 
-      - name: Generate Random Commits (33 to 83 per run, total ~200 to 500 daily)
+      - name: Generate and push commits
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Setup git config identity — must match your GitHub account email
-          git config --global user.email "abhiramak963@gmail.com"
-          git config --global user.name "abhi963007"
+          set -euo pipefail
 
-          # Always sync with the latest remote state first to avoid conflicts
+          git config user.email "abhiramak963@gmail.com"
+          git config user.name "abhi963007"
+
           git fetch origin main
+          git checkout main
           git reset --hard origin/main
 
-          # Generate 33 to 83 commits per run (runs 6 times daily for ~200-500 total commits)
           commits=$(( RANDOM % 51 + 33 ))
-          echo "Selected commit count for this run: $commits"
+          echo "Committing $commits times for $(date -u +%Y-%m-%d) (UTC)"
 
-          # Target date is today (UTC)
-          target_date=$(date +%Y-%m-%d)
+          target_date=$(date -u +%Y-%m-%d)
 
-          # Append timestamps and commit iteratively with randomized times
-          for i in $(seq 1 $commits)
-          do
-            # Generate random hour (00-23), minute (00-59), and second (00-59)
+          for i in $(seq 1 "$commits"); do
             hour=$(printf "%02d" $(( RANDOM % 24 )))
             min=$(printf "%02d" $(( RANDOM % 60 )))
             sec=$(printf "%02d" $(( RANDOM % 60 )))
-            
-            timestamp="${target_date} ${hour}:${min}:${sec}"
-            
-            echo "GitShine Cloud Commit: $timestamp - Commit #$i of $commits" >> contributions.txt
+            timestamp="${target_date}T${hour}:${min}:${sec}Z"
+
+            echo "GitShine Cloud Commit: ${timestamp} - Commit #${i} of ${commits}" >> contributions.txt
             git add contributions.txt
-            
-            # Commit with custom author and committer dates to distribute them randomly across 24 hours
-            GIT_AUTHOR_DATE="$timestamp" GIT_COMMITTER_DATE="$timestamp" git commit -m "GitShine contribution update #$i [skip ci]"
+            GIT_AUTHOR_DATE="$timestamp" GIT_COMMITTER_DATE="$timestamp" \
+              git commit -m "GitShine contribution update #${i}"
           done
 
-      - name: Push Commits back to GitHub
-        run: |
-          git push origin main
+          git push origin HEAD:main
