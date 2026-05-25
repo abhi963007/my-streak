@@ -2,8 +2,8 @@ name: Daily Streak Keeper
 
 on:
   schedule:
-    # Trigger daily at 12:30 AM UTC (6:00 AM Indian Standard Time)
-    - cron: '30 0 * * *'
+    # Trigger 6 times a day (every 4 hours, starting at 6:00 AM Indian Standard Time / 12:30 AM UTC)
+    - cron: '30 */4 * * *'
   workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
         with:
           fetch-depth: 0  # Fetch full history to avoid conflicts
 
-      - name: Generate Random Commits (200 to 500 with randomized times)
+      - name: Generate Random Commits (33 to 83 per run, total ~200 to 500 daily)
         run: |
           # Setup git config identity — must match your GitHub account email
           git config --global user.email "abhiramak963@gmail.com"
@@ -28,9 +28,9 @@ jobs:
           git fetch origin main
           git reset --hard origin/main
 
-          # Generate a random commit count between 200 and 500
-          commits=$(( RANDOM % 301 + 200 ))
-          echo "Selected commit count for today: $commits"
+          # Generate 33 to 83 commits per run (runs 6 times daily for ~200-500 total commits)
+          commits=$(( RANDOM % 51 + 33 ))
+          echo "Selected commit count for this run: $commits"
 
           # Target date is today (UTC)
           target_date=$(date +%Y-%m-%d)

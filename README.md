@@ -7,9 +7,9 @@ Every day, a scheduled workflow generates **50–100 randomised commits**, keepi
 
 ## How It Works
 
-1. A **GitHub Actions cron job** fires once per day (default: 12:30 AM UTC / 6:00 AM IST).
+1. A **GitHub Actions cron job** fires 6 times per day (every 4 hours, starting at 6:00 AM IST / 12:30 AM UTC).
 2. A cloud Ubuntu runner checks out this repository.
-3. A bash script picks a random number between 50 and 100, then loops that many times — each iteration appends a timestamped line to `contributions.txt` and creates a git commit.
+3. A bash script picks a random number of commits between 33 and 83 per run, then loops that many times — each iteration appends a timestamped line to `contributions.txt` and creates a git commit. Over 6 runs daily, this generates ~200 to 500 total commits.
 4. All commits are pushed back to `main`, and GitHub registers them on your profile calendar.
 
 > **Tip:** Use a **private** repository so the automation stays invisible.  
@@ -68,7 +68,7 @@ Edit `.github/workflows/daily-streak.yml` and modify the cron expression:
 
 ```yaml
 schedule:
-  - cron: '30 0 * * *'   # 12:30 AM UTC (6:00 AM IST) — change this
+  - cron: '30 */4 * * *'   # 6 times a day, starting at 6:00 AM IST / 12:30 AM UTC — change this
 ```
 
 Useful cron examples:
@@ -84,7 +84,7 @@ Useful cron examples:
 In the same file, find this line:
 
 ```bash
-commits=$(( RANDOM % 51 + 50 ))
+commits=$(( RANDOM % 51 + 33 ))
 ```
 
 - `RANDOM % 51 + 50` → generates 50–100 commits.
