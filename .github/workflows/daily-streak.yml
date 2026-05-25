@@ -42,13 +42,13 @@ jobs:
           commits=$(( RANDOM % 51 + 33 ))
           echo "Committing $commits times for $(date -u +%Y-%m-%d) (UTC)"
 
-          target_date=$(date -u +%Y-%m-%d)
+          current_epoch=$(date +%s)
 
           for i in $(seq 1 "$commits"); do
-            hour=$(printf "%02d" $(( RANDOM % 24 )))
-            min=$(printf "%02d" $(( RANDOM % 60 )))
-            sec=$(printf "%02d" $(( RANDOM % 60 )))
-            timestamp="${target_date}T${hour}:${min}:${sec}Z"
+            # Subtract between 10 and 120 seconds per commit to spread them out in the past
+            offset=$(( i * (RANDOM % 110 + 10) ))
+            commit_epoch=$(( current_epoch - offset ))
+            timestamp=$(date -u -d "@$commit_epoch" +"%Y-%m-%dT%H:%M:%SZ")
 
             echo "GitShine Cloud Commit: ${timestamp} - Commit #${i} of ${commits}" >> contributions.txt
             git add contributions.txt
