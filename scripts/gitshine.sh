@@ -98,13 +98,15 @@ run_issue() {
   
   local idx=$(( RANDOM % ${#titles[@]} ))
   local title="${titles[$idx]}"
-  local body=$(echo -e "${bodies[$idx]}\n\n*Automated health verification task powered by GitShine.*")
+  local body
+  body=$(printf '%s\n\n*Automated health verification task powered by GitShine.*' "${bodies[$idx]}")
 
   # Create the issue as the USER
   log_info "Creating issue: \"$title\"..."
   local issue_url
-  issue_url=$(GH_TOKEN="$USER_PAT" gh issue create --title "$title" --body "$body")
-  local issue_num=$(echo "$issue_url" | grep -oE '[0-9]+$')
+  issue_url=$(GH_TOKEN="$USER_PAT" gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body")
+  local issue_num
+  issue_num=$(echo "$issue_url" | grep -oE '[0-9]+$')
   
   log_success "Created Issue #$issue_num"
   
@@ -113,7 +115,7 @@ run_issue() {
 
   # Close the issue as the USER
   log_info "Closing Issue #$issue_num..."
-  GH_TOKEN="$USER_PAT" gh issue close "$issue_num" --comment "Verification completed successfully. Performance metrics meet established standards. Closing task." >/dev/null
+  GH_TOKEN="$USER_PAT" gh issue close "$issue_num" --repo "$GITHUB_REPOSITORY" --comment "Verification completed successfully. Performance metrics meet established standards. Closing task." >/dev/null
   log_success "Successfully completed Issue contribution cycle!"
 }
 
@@ -137,22 +139,25 @@ run_pr() {
 
   # Open PR as the USER
   log_info "Creating Pull Request..."
-  local pr_body=$(echo -e "Automated pull request to synchronize minor background configuration metrics.\n\n*Created by GitShine.*")
+  local pr_body
+  pr_body=$(printf 'Automated pull request to synchronize minor background configuration metrics.\n\n*Created by GitShine.*')
   local pr_url
   pr_url=$(GH_TOKEN="$USER_PAT" gh pr create \
+    --repo "$GITHUB_REPOSITORY" \
     --title "Refactor: daily configuration sync" \
     --body "$pr_body" \
     --base main \
     --head "$branch_name")
   
-  local pr_num=$(echo "$pr_url" | grep -oE '[0-9]+$')
+  local pr_num
+  pr_num=$(echo "$pr_url" | grep -oE '[0-9]+$')
   log_success "Created Pull Request #$pr_num"
 
   sleep $(( RANDOM % 5 + 3 ))
 
   # Merge PR as the USER (also deletes the remote/local branch)
   log_info "Merging Pull Request #$pr_num..."
-  GH_TOKEN="$USER_PAT" gh pr merge "$pr_num" --merge --delete-branch >/dev/null
+  GH_TOKEN="$USER_PAT" gh pr merge "$pr_num" --repo "$GITHUB_REPOSITORY" --merge --delete-branch >/dev/null
   
   # Clean up local branch
   git checkout main
@@ -181,15 +186,18 @@ run_review() {
 
   # Open PR using GITHUB_TOKEN (attributed to github-actions[bot])
   log_info "Opening PR as the actions bot..."
-  local review_pr_body=$(echo -e "Proposed checklist updates to repository actions workflow. Please review.")
+  local review_pr_body
+  review_pr_body=$(printf 'Proposed checklist updates to repository actions workflow. Please review.')
   local pr_url
   pr_url=$(GH_TOKEN="$GITHUB_TOKEN" gh pr create \
+    --repo "$GITHUB_REPOSITORY" \
     --title "Workflow audit: metadata compliance" \
     --body "$review_pr_body" \
     --base main \
     --head "$branch_name")
   
-  local pr_num=$(echo "$pr_url" | grep -oE '[0-9]+$')
+  local pr_num
+  pr_num=$(echo "$pr_url" | grep -oE '[0-9]+$')
   log_success "Bot opened Pull Request #$pr_num"
 
   sleep $(( RANDOM % 5 + 3 ))
@@ -203,14 +211,14 @@ run_review() {
   )
   local review_msg="${review_msgs[$(( RANDOM % ${#review_msgs[@]} ))]}"
   
-  GH_TOKEN="$USER_PAT" gh pr review "$pr_num" --approve --body "$review_msg" >/dev/null
+  GH_TOKEN="$USER_PAT" gh pr review "$pr_num" --repo "$GITHUB_REPOSITORY" --approve --body "$review_msg" >/dev/null
   log_success "Approved and reviewed PR #$pr_num!"
 
   sleep $(( RANDOM % 3 + 2 ))
 
   # Merge PR using USER_PAT
   log_info "Merging PR #$pr_num..."
-  GH_TOKEN="$USER_PAT" gh pr merge "$pr_num" --merge --delete-branch >/dev/null
+  GH_TOKEN="$USER_PAT" gh pr merge "$pr_num" --repo "$GITHUB_REPOSITORY" --merge --delete-branch >/dev/null
 
   # Clean up local branch
   git checkout main
