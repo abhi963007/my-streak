@@ -6,9 +6,11 @@ on:
     - cron: '30 */4 * * *'
   workflow_dispatch:
 
-# Required so GITHUB_TOKEN can push (repo Settings must also allow read/write)
+# Required permissions for GITHUB_TOKEN and gh CLI operations
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
 
 concurrency:
   group: daily-streak-${{ github.ref }}
@@ -26,34 +28,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Generate and push commits
+      - name: Run GitShine Multi-Dimensional Automator
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USER_PAT: ${{ secrets.USER_PAT }}
         run: |
-          set -euo pipefail
+          bash scripts/gitshine.sh
 
-          git config user.email "abhiramak963@gmail.com"
-          git config user.name "abhi963007"
-
-          git fetch origin main
-          git checkout main
-          git reset --hard origin/main
-
-          commits=$(( RANDOM % 51 + 33 ))
-          echo "Committing $commits times for $(date -u +%Y-%m-%d) (UTC)"
-
-          current_epoch=$(date +%s)
-
-          for i in $(seq 1 "$commits"); do
-            # Subtract between 10 and 120 seconds per commit to spread them out in the past
-            offset=$(( i * (RANDOM % 110 + 10) ))
-            commit_epoch=$(( current_epoch - offset ))
-            timestamp=$(date -u -d "@$commit_epoch" +"%Y-%m-%dT%H:%M:%SZ")
-
-            echo "GitShine Cloud Commit: ${timestamp} - Commit #${i} of ${commits}" >> contributions.txt
-            git add contributions.txt
-            GIT_AUTHOR_DATE="$timestamp" GIT_COMMITTER_DATE="$timestamp" \
-              git commit -m "GitShine contribution update #${i}"
-          done
-
-          git push origin HEAD:main
