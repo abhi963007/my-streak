@@ -249,18 +249,18 @@ git fetch origin main
 git checkout main
 git reset --hard origin/main
 
-# 35% chance to run each auxiliary activity (randomized to look organic)
+# 100% chance to run each auxiliary activity temporarily for instant verification (change back to 35 later for organic simulation)
 roll_issue=$(( RANDOM % 100 ))
 roll_pr=$(( RANDOM % 100 ))
 roll_review=$(( RANDOM % 100 ))
 
 log_info "Rolling organic event probabilities..."
-log_info "Issue roll: $roll_issue% (Threshold < 35%)"
-log_info "PR roll: $roll_pr% (Threshold < 35%)"
-log_info "Review roll: $roll_review% (Threshold < 35%)"
+log_info "Issue roll: $roll_issue% (Threshold < 100%)"
+log_info "PR roll: $roll_pr% (Threshold < 100%)"
+log_info "Review roll: $roll_review% (Threshold < 100%)"
 
 # Run Issue if rolled
-if [ "$roll_issue" -lt 35 ]; then
+if [ "$roll_issue" -lt 100 ]; then
   # Wrap in try-catch to avoid breaking the overall runner if GitHub API has transient issues
   run_issue || log_err "Transient error in Issue automation, skipping."
   # Resync state after possible remote changes
@@ -270,7 +270,7 @@ if [ "$roll_issue" -lt 35 ]; then
 fi
 
 # Run Pull Request if rolled
-if [ "$roll_pr" -lt 35 ]; then
+if [ "$roll_pr" -lt 100 ]; then
   run_pr || log_err "Transient error in PR automation, skipping."
   git fetch origin main
   git checkout main
@@ -278,7 +278,7 @@ if [ "$roll_pr" -lt 35 ]; then
 fi
 
 # Run Code Review if rolled
-if [ "$roll_review" -lt 35 ]; then
+if [ "$roll_review" -lt 100 ]; then
   run_review || log_err "Transient error in Code Review automation, skipping."
   git fetch origin main
   git checkout main
